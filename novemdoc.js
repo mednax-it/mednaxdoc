@@ -13,7 +13,7 @@ const DEBUG=true;
 
 Novem Document standards.
 
-NovemDco wraps a nested hash (pute object) structure, ready to serialize
+NovemDoc wraps a nested hash (pute object) structure, ready to serialize
 with no conversion of a core data structure.
 
 this.dict
@@ -183,9 +183,14 @@ export class NovemDoc
          const appFlat = appDoc.flatten();
 
          // 3. apply the key/vals to current dict
+         // NOTE: dotobject can do this.
          _.forEach(appFlat, (value, key) => {
-             const displayVal = (key.indexOf("pass")>=0) ? "xxxxxxxx" : value;
-             log.debug(`applying (${this.doctype}): ${key} = ${displayVal}`)
+            // display removed
+            //  cont blankOut = (key.indexOf("pass")>=0)
+            //               || (key.indexOf("key")>=0)
+            //               || (key.indexOf("secret")>=0)
+            //  const displayVal = (key.indexOf("pass")>=0) ? "xxxxxxxx" : value;
+            //  log.debug(`applying (${this.doctype}): ${key} = ${displayVal}`)
              this.set(key, value);
          });
 
