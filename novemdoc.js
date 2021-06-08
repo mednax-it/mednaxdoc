@@ -208,13 +208,41 @@ export class NovemDoc
      }
 
      difference(object) {
-         const base = this.dict;
-    	 function changes(object, base) {
-             return _.transform(object, function(result, value, key) {
-    	         if (!_.isEqual(value, base[key])) {
-    				result[key] = (_.isObject(value) && _.isObject(base[key])) ? changes(value, base[key]) : value;
-    			 }
-    		 });
+        /* @@REFACTOR Note:
+            This name is misleading because this essentially returns a copy
+            of things in "our" object have different values or don't exist in
+            the other (their) object. You could apply it to deep insert values
+            in the other.
+        */ 
+        const base = this.dict;
+        if (object.dict) {
+            // duck typing as novemdoc
+            object = object.dict;
+        }
+    	function changes(object, base) {
+            return _.transform(object, function(result, value, key) {
+    	        if (!_.isEqual(value, base[key])) {
+    	    		result[key] = (_.isObject(value) && _.isObject(base[key])) ? changes(value, base[key]) : value;
+                }
+    		});
+    	}
+    	return changes(object, base);
+    }
+
+    betterDiff(object) {
+        // @@NEED to design bestDiff soon
+        const base = this.dict;
+        if (object.dict) {
+            // duck typing as novemdoc
+            object = object.dict;
+        }
+    	function changes(object, base) {
+            return _.transform(object, function(result, value, key) {
+    	        if (!_.isEqual(value, base[key])) {
+    	    		result[key] = (_.isObject(value) && _.isObject(base[key])) ? changes(value, base[key]) : value;
+                    if (!_.isObject(value)) result[`their_${key}`] = `${base[key]}`;
+                }
+    		});
     	}
     	return changes(object, base);
     }
