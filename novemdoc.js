@@ -139,6 +139,32 @@ export class NovemDoc
         dot.set(key, val, dict);
     }
 
+    static clean_empty(dict) {
+        if (_.isEmpty(dict)) return null;
+    
+        const cleaned = _.transform(dict, function(result, value, key, object) {
+            if (_.isObject(value)) {
+                if (_.isEmpty(value)) {
+                    delete object[key];
+                } else {
+                    NovemDoc.clean_empty(value);
+                }
+            }
+            
+            // console.log(`nd252: transform
+            // key=${JSON.stringify(key)}                
+            // value=${JSON.stringify(value)}
+            // result=${JSON.stringify(result)}
+            // object=${JSON.stringify(object)}`
+            // );
+            
+            return true;
+        }, dict);
+        return _.isEmpty(cleaned) ? null : cleaned;
+    }
+    
+
+
       //////
      //
     //  PROPERTIES
@@ -244,11 +270,15 @@ export class NovemDoc
                 }
     		});
     	}
-    	return changes(object, base);
+        
+    	const sosoDiff = changes(object, base);
+        const cleanDiff = NovemDoc.clean_empty(sosoDiff);
+        return cleanDiff;
     }
 
     has_key(key)
     {
+        // @@badnaming: _ means static
         var val =  dot.pick(key, this.dict);
         return typeof(val) != "undefined";
     }
@@ -420,3 +450,4 @@ export class NovemDoc
 }
 
 export default NovemDoc;
+
