@@ -147,7 +147,10 @@ export class NovemDoc
                 if (_.isEmpty(value)) {
                     delete object[key];
                 } else {
-                    NovemDoc.clean_empty(value);
+                    const cleanValue = NovemDoc.clean_empty(value);
+                    if (!cleanValue || (_.isObject(cleanValue) && _.isEmpty(cleanValue))) {
+                        delete object[key];
+                    }
                 }
             }
             
@@ -272,6 +275,7 @@ export class NovemDoc
     	}
         
     	const sosoDiff = changes(object, base);
+        // const cleanDiff = sosoDiff; // for Developer Exercises
         const cleanDiff = NovemDoc.clean_empty(sosoDiff);
         return cleanDiff;
     }
