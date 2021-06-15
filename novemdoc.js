@@ -13,7 +13,7 @@ const DEBUG=true;
 
 Novem Document standards.
 
-NovemDco wraps a nested hash (pute object) structure, ready to serialize
+NovemDoc wraps a nested hash (pute object) structure, ready to serialize
 with no conversion of a core data structure.
 
 this.dict
@@ -139,6 +139,35 @@ export class NovemDoc
         dot.set(key, val, dict);
     }
 
+    static clean_empty(dict) {
+        if (_.isEmpty(dict)) return null;
+    
+        const cleaned = _.transform(dict, function(result, value, key, object) {
+            if (_.isObject(value)) {
+                if (_.isEmpty(value)) {
+                    delete object[key];
+                } else {
+                    const cleanValue = NovemDoc.clean_empty(value);
+                    if (!cleanValue || (_.isObject(cleanValue) && _.isEmpty(cleanValue))) {
+                        delete object[key];
+                    }
+                }
+            }
+            
+            // console.log(`nd252: transform
+            // key=${JSON.stringify(key)}                
+            // value=${JSON.stringify(value)}
+            // result=${JSON.stringify(result)}
+            // object=${JSON.stringify(object)}`
+            // );
+            
+            return true;
+        }, dict);
+        return _.isEmpty(cleaned) ? null : cleaned;
+    }
+    
+
+
       //////
      //
     //  PROPERTIES
@@ -183,9 +212,14 @@ export class NovemDoc
          const appFlat = appDoc.flatten();
 
          // 3. apply the key/vals to current dict
+         // NOTE: dotobject can do this.
          _.forEach(appFlat, (value, key) => {
-             const displayVal = (key.indexOf("pass")>=0) ? "xxxxxxxx" : value;
-             log.debug(`applying (${this.doctype}): ${key} = ${displayVal}`)
+            // display removed
+            //  cont blankOut = (key.indexOf("pass")>=0)
+            //               || (key.indexOf("key")>=0)
+            //               || (key.indexOf("secret")>=0)
+            //  const displayVal = (key.indexOf("pass")>=0) ? "xxxxxxxx" : value;
+            //  log.debug(`applying (${this.doctype}): ${key} = ${displayVal}`)
              this.set(key, value);
          });
 
@@ -203,19 +237,52 @@ export class NovemDoc
      }
 
      difference(object) {
-         const base = this.dict;
-    	 function changes(object, base) {
-             return _.transform(object, function(result, value, key) {
-    	         if (!_.isEqual(value, base[key])) {
-    				result[key] = (_.isObject(value) && _.isObject(base[key])) ? changes(value, base[key]) : value;
-    			 }
-    		 });
+        /* @@REFACTOR Note:
+            This name is misleading because this essentially returns a copy
+            of things in "our" object have different values or don't exist in
+            the other (their) object. You could apply it to deep insert values
+            in the other.
+        */ 
+        const base = this.dict;
+        if (object.dict) {
+            // duck typing as novemdoc
+            object = object.dict;
+        }
+    	function changes(object, base) {
+            return _.transform(object, function(result, value, key) {
+    	        if (!_.isEqual(value, base[key])) {
+    	    		result[key] = (_.isObject(value) && _.isObject(base[key])) ? changes(value, base[key]) : value;
+                }
+    		});
     	}
     	return changes(object, base);
     }
 
+    betterDiff(object) {
+        // @@NEED to design bestDiff soon
+        const base = this.dict;
+        if (object.dict) {
+            // duck typing as novemdoc
+            object = object.dict;
+        }
+    	function changes(object, base) {
+            return _.transform(object, function(result, value, key) {
+    	        if (!_.isEqual(value, base[key])) {
+    	    		result[key] = (_.isObject(value) && _.isObject(base[key])) ? changes(value, base[key]) : value;
+                    if (!_.isObject(value)) result[`their_${key}`] = `${base[key]}`;
+                }
+    		});
+    	}
+        
+    	const sosoDiff = changes(object, base);
+        // const cleanDiff = sosoDiff; // for Developer Exercises
+        const cleanDiff = NovemDoc.clean_empty(sosoDiff);
+        return cleanDiff;
+    }
+
     has_key(key)
     {
+        // @@badnaming: _ means static
         var val =  dot.pick(key, this.dict);
         return typeof(val) != "undefined";
     }
@@ -387,3 +454,4 @@ export class NovemDoc
 }
 
 export default NovemDoc;
+

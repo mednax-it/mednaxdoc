@@ -7,6 +7,7 @@ import NError from '../errors/NError.js';
 import cloneDeep from 'lodash/cloneDeep.js';
 import get from 'lodash/get.js';
 import set from 'lodash/set.js';
+import defaults from 'lodash/defaults.js';
 import packageLogger from '../pkgLogger.js';
 
 const log = packageLogger.subLogger('NDS');
@@ -22,10 +23,16 @@ export class NDocStep {
             routine: routine to wrap, function, async function or async generator
         }
         */
-        const {inputMapping, outputMapping, routine} = args;
+        const {
+            inputMapping,
+            outputMapping,
+            routine,
+            staticInput = {},
+        } = args;
         
         this.inputMapping = inputMapping;
         this.outputMapping = outputMapping;
+        this.staticInput = staticInput;
         this.routine = routine;
         this.routineType = this.getRoutineType_sync({routine});
     }
@@ -41,13 +48,18 @@ export class NDocStep {
         */
         // @@FUTURE: this is where we would copy input if we want it unmolested
         // possibly by step configuration.
-        const args = input ;//this.applyInputMapping_sync(input);
+        const args = defaults(this.staticInput, input); //this.applyInputMapping_sync(input);
+        
         let output = null;
         if (this.routine) {
             const executeRoutineTypeFuncName = `execute${this.routineType}`;
             const routineExecutor = this[executeRoutineTypeFuncName];
             log.detail(`(39) execute ${JSON.stringify(
-                {executeRoutineTypeFuncName, routineExecutor, args},
+                {
+                    executeRoutineTypeFuncName,
+                    routineExecutor, 
+                    input: {...args, context: "<notShown>"}
+                },
                 null, 4)}`);
             let answer = await routineExecutor.call(this, args);
             output = answer; // this.applyOutputMapping_sync(answer);
@@ -58,7 +70,7 @@ export class NDocStep {
     }
 
     async executeFunction(input) {
-        log.debug('(44)', JSON.stringify(input, null, 4));
+        log.debug('(NDS44)', JSON.stringify(input, null, 4));
         return this.routine(input);
     }
 
