@@ -48,7 +48,7 @@ export class NDocStep {
         */
         // @@FUTURE: this is where we would copy input if we want it unmolested
         // possibly by step configuration.
-        const args = defaults(this.staticInput, input); //this.applyInputMapping_sync(input);
+        const args = defaults({}, this.staticInput, input); //this.applyInputMapping_sync(input);
         
         let output = null;
         if (this.routine) {
